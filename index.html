@@ -69,7 +69,6 @@ body{background:#f4f4f4;}
   padding-bottom:8px;
 }
 
-.cart-item button{margin:2px;}
 .cart-summary{font-size:14px;margin-top:10px;}
 
 button.checkout{
@@ -102,6 +101,7 @@ button.checkout{
 
 <div class="content" id="grid"></div>
 
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal()">✖</span>
@@ -115,6 +115,7 @@ button.checkout{
   </div>
 </div>
 
+<!-- CART -->
 <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
 
 <div class="cart-panel" id="cartPanel">
@@ -132,14 +133,10 @@ button.checkout{
   <button class="checkout" onclick="checkout()">Finalizar compra</button>
 </div>
 
-<script>
+<!-- 🔌 CONEXIÓN A PRODUCTOS -->
+<script src="products.js"></script>
 
-let products=[
-  {id:1,name:"Vestido floral",price:199,cat:"ropa",img:"https://via.placeholder.com/300",desc:"Vestido ligero"},
-  {id:2,name:"Brownies",price:80,cat:"comida",img:"https://via.placeholder.com/300",desc:"Caseros"},
-  {id:3,name:"Collar dorado",price:120,cat:"accesorios",img:"https://via.placeholder.com/300",desc:"Elegante"},
-  {id:4,name:"Velas aromáticas",price:150,cat:"hogar",img:"https://via.placeholder.com/300",desc:"Relax total"},
-];
+<script>
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let current = null;
@@ -237,22 +234,14 @@ function calcularEnvio(cp){
 
   cp = (cp || "").trim();
 
-  if(cp.startsWith("30450")){
-    return { costo:35, tipo:"Arriaga" };
-  }
-
-  if(cp.startsWith("29") || cp.startsWith("30")){
-    return { costo:60, tipo:"Chiapas" };
-  }
-
-  if(cp.startsWith("0") || cp.startsWith("7") || cp.startsWith("9")){
-    return { costo:120, tipo:"Zona media" };
-  }
+  if(cp.startsWith("30450")) return { costo:35, tipo:"Arriaga" };
+  if(cp.startsWith("29") || cp.startsWith("30")) return { costo:60, tipo:"Chiapas" };
+  if(cp.startsWith("0") || cp.startsWith("7") || cp.startsWith("9")) return { costo:120, tipo:"Zona media" };
 
   return { costo:150, tipo:"Lejano" };
 }
 
-/* RENDER CARRITO (SIN ROMPER CP) */
+/* RENDER CARRITO */
 function renderCart(){
 
   let box=document.getElementById("cartItems");
@@ -261,7 +250,6 @@ function renderCart(){
   let subtotal=0;
 
   cart.forEach((p,i)=>{
-
     if(!p.qty) p.qty=1;
 
     subtotal += p.price * p.qty;
@@ -282,18 +270,18 @@ function renderCart(){
   });
 
   let cpValue = document.getElementById("cp")?.value || "";
-  let envioData = calcularEnvio(cpValue);
+  let envio = calcularEnvio(cpValue);
 
   let iva = subtotal * 0.16;
-  let total = subtotal + iva + envioData.costo;
+  let total = subtotal + iva + envio.costo;
 
   document.getElementById("cartSummary").innerHTML=`
   <hr>
   Subtotal: $${subtotal}<br>
   IVA: $${iva.toFixed(2)}<br>
 
-  🚚 Envío (${envioData.tipo}): $${envioData.costo}<br>
-  <small style="color:#666;">El envío es estimado y se confirma después.</small>
+  🚚 Envío (${envio.tipo}): $${envio.costo}<br>
+  <small>Se confirma después</small>
 
   <br><b>Total: $${total.toFixed(2)}</b>
   `;
@@ -307,17 +295,14 @@ function removeItem(i){ cart.splice(i,1); save(); }
 /* CHECKOUT */
 function checkout(){
 
-  if(cart.length===0){
-    alert("Carrito vacío");
-    return;
-  }
+  if(cart.length===0) return alert("Carrito vacío");
 
   let cp=document.getElementById("cp")?.value;
-  let envioData=calcularEnvio(cp);
+  let envio=calcularEnvio(cp);
 
   let subtotal=cart.reduce((a,b)=>a+b.price*b.qty,0);
   let iva=subtotal*0.16;
-  let total=subtotal+iva+envioData.costo;
+  let total=subtotal+iva+envio.costo;
 
   let msg="🛒 NUEVO PEDIDO%0A%0A";
 
@@ -325,8 +310,7 @@ function checkout(){
     msg+=`• ${p.name} x${p.qty} - $${p.price*p.qty}%0A`;
   });
 
-  msg+=`%0A🚚 Envío: ${envioData.tipo} ($${envioData.costo} aprox)`;
-  msg+=`%0A⚠️ Se confirma el costo final`;
+  msg+=`%0A🚚 Envío: ${envio.tipo} ($${envio.costo})`;
   msg+=`%0A💰 TOTAL: $${total}`;
 
   localStorage.removeItem("cart");
@@ -335,18 +319,6 @@ function checkout(){
   closeCart();
 
   window.open(`https://wa.me/529661117847?text=${msg}`,"_blank");
-}
-
-/* CP LIVE FIX (CORREGIDO) */
-let cpTimeout = null;
-
-const cpInput = document.getElementById("cp");
-
-if (cpInput) {
-  cpInput.addEventListener("input", () => {
-    clearTimeout(cpTimeout);
-    cpTimeout = setTimeout(renderCart, 120);
-  });
 }
 
 </script>
