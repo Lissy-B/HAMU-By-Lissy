@@ -144,7 +144,7 @@ let products=[
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let current = null;
 
-/* PRODUCTOS */
+/* RENDER PRODUCTOS */
 function render(list=products){
   let grid=document.getElementById("grid");
   grid.innerHTML="";
@@ -252,7 +252,7 @@ function calcularEnvio(cp){
   return { costo:150, tipo:"Lejano" };
 }
 
-/* RENDER CARRITO */
+/* RENDER CARRITO (SIN ROMPER CP) */
 function renderCart(){
 
   let box=document.getElementById("cartItems");
@@ -281,9 +281,7 @@ function renderCart(){
     `;
   });
 
-  let cpInput = document.getElementById("cp");
-  let cpValue = cpInput ? cpInput.value : "";
-
+  let cpValue = document.getElementById("cp")?.value || "";
   let envioData = calcularEnvio(cpValue);
 
   let iva = subtotal * 0.16;
@@ -328,7 +326,7 @@ function checkout(){
   });
 
   msg+=`%0A🚚 Envío: ${envioData.tipo} ($${envioData.costo} aprox)`;
-  msg+=`%0A⚠️ Se confirma el costo final de envío`;
+  msg+=`%0A⚠️ Se confirma el costo final`;
   msg+=`%0A💰 TOTAL: $${total}`;
 
   localStorage.removeItem("cart");
@@ -339,21 +337,19 @@ function checkout(){
   window.open(`https://wa.me/529661117847?text=${msg}`,"_blank");
 }
 
-/* CP LIVE FIX */
-let cpTimeout;
+/* CP LIVE FIX (CORREGIDO) */
+let cpTimeout = null;
 
-function initCPListener(){
-  const cpInput = document.getElementById("cp");
-  if(!cpInput) return;
+const cpInput = document.getElementById("cp");
 
+if (cpInput) {
   cpInput.addEventListener("input", () => {
     clearTimeout(cpTimeout);
-    cpTimeout = setTimeout(renderCart, 150);
+    cpTimeout = setTimeout(renderCart, 120);
   });
 }
 
-window.addEventListener("DOMContentLoaded", initCPListener);
-
 </script>
+
 </body>
 </html>
