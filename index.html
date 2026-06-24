@@ -194,7 +194,7 @@ let current = null;
 let activeCategory = "todos";
 let searchText = "";
 
-/* RENDER INTELIGENTE */
+/* RENDER */
 function render(){
   let grid = document.getElementById("grid");
   grid.innerHTML = "";
@@ -207,10 +207,13 @@ function render(){
 
   if(searchText !== ""){
     list = list.filter(p =>
-      p.name.toLowerCase().includes(searchText) ||
-      p.desc.toLowerCase().includes(searchText) ||
-      p.cat.toLowerCase().includes(searchText)
+      (p.name + p.desc + p.cat).toLowerCase().includes(searchText)
     );
+  }
+
+  if(list.length === 0){
+    grid.innerHTML = "<p style='padding:20px'>No hay resultados</p>";
+    return;
   }
 
   list.forEach(p=>{
@@ -229,7 +232,7 @@ render();
 
 /* BÚSQUEDA */
 function searchProducts(text){
-  searchText = text.toLowerCase().trim();
+  searchText = (text || "").toLowerCase().trim();
   render();
 }
 
@@ -248,11 +251,8 @@ function add(id){
   let p = products.find(x=>x.id===id);
   let existing = cart.find(x=>x.id===id);
 
-  if(existing){
-    existing.qty += 1;
-  } else {
-    cart.push({...p, qty:1});
-  }
+  if(existing) existing.qty++;
+  else cart.push({...p, qty:1});
 
   save();
 }
@@ -276,11 +276,8 @@ function closeModal(){
 function addModal(){
   let existing = cart.find(x=>x.id===current.id);
 
-  if(existing){
-    existing.qty += 1;
-  } else {
-    cart.push({...current, qty:1});
-  }
+  if(existing) existing.qty++;
+  else cart.push({...current, qty:1});
 
   save();
   closeModal();
