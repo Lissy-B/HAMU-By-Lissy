@@ -138,12 +138,14 @@ button.checkout{
   <div onclick="openCart()" style="cursor:pointer;">🛒</div>
 </div>
 
+<!-- CATEGORÍAS ACTUALIZADAS -->
 <div class="cats">
   <div class="cat active" onclick="filter('todos',event)">Todo</div>
   <div class="cat" onclick="filter('ropa',event)">Ropa</div>
-  <div class="cat" onclick="filter('comida',event)">Comida</div>
-  <div class="cat" onclick="filter('accesorios',event)">Accesorios</div>
-  <div class="cat" onclick="filter('hogar',event)">Hogar</div>
+  <div class="cat" onclick="filter('postres',event)">Postres por pedido</div>
+  <div class="cat" onclick="filter('disponibles',event)">Disponibles</div>
+  <div class="cat" onclick="filter('memoriales',event)">Memoriales</div>
+  <div class="cat" onclick="filter('coleccionables',event)">Coleccionables</div>
 </div>
 
 <div class="content" id="grid"></div>
@@ -183,9 +185,9 @@ button.checkout{
 
 let products = [
   {id:1,name:"Vestido floral",price:199,cat:"ropa",img:"https://via.placeholder.com/300",desc:"Vestido ligero"},
-  {id:2,name:"Brownies",price:80,cat:"comida",img:"https://via.placeholder.com/300",desc:"Caseros"},
-  {id:3,name:"Collar dorado",price:120,cat:"accesorios",img:"https://via.placeholder.com/300",desc:"Elegante"},
-  {id:4,name:"Velas aromáticas",price:150,cat:"hogar",img:"https://via.placeholder.com/300",desc:"Relax total"},
+  {id:2,name:"Brownies",price:80,cat:"postres",img:"https://via.placeholder.com/300",desc:"Caseros por pedido"},
+  {id:3,name:"Collar dorado",price:120,cat:"coleccionables",img:"https://via.placeholder.com/300",desc:"Elegante"},
+  {id:4,name:"Vela conmemorativa",price:150,cat:"memoriales",img:"https://via.placeholder.com/300",desc:"Recuerdo especial"},
 ];
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -399,8 +401,8 @@ window.addEventListener("load", () => {
   if(cp){
     cp.addEventListener("input", renderCart);
   }
-  renderCart();
   render();
+  renderCart();
 });
 
 </script>
