@@ -1,9 +1,341 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<title>Prueba HAMU</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tienda App</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+body{background:#f4f4f4;}
+
+.header{
+  position:fixed;top:0;width:100%;
+  background:white;display:flex;align-items:center;
+  gap:10px;padding:10px;border-bottom:1px solid #ddd;
+  z-index:10;
+}
+.search{flex:1;padding:8px;border-radius:20px;border:1px solid #ccc;}
+
+.cats{
+  position:fixed;top:55px;width:100%;
+  background:white;display:flex;overflow-x:auto;
+  gap:10px;padding:8px;border-bottom:1px solid #eee;
+  z-index:9;
+}
+.cat{padding:6px 12px;border-radius:20px;background:#eee;white-space:nowrap;cursor:pointer;}
+.cat.active{background:black;color:white;}
+
+.content{
+  padding:120px 10px 40px;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+
+.card{
+  background:white;border-radius:12px;
+  overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+.card img{width:100%;height:150px;object-fit:cover;cursor:pointer;}
+.info{padding:8px;}
+.price{color:#e91e63;font-weight:bold;}
+
+.btn{width:100%;padding:6px;margin-top:5px;border:none;background:black;color:white;border-radius:8px;}
+
+.modal{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:30;
+}
+.modal-content{background:white;width:90%;padding:15px;border-radius:12px;}
+.close{float:right;cursor:pointer;}
+
+.cart-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.5);display:none;z-index:50;
+}
+
+.cart-panel{
+  position:fixed;top:0;right:-100%;width:80%;max-width:340px;
+  height:100%;background:white;padding:15px;z-index:60;
+  transition:0.3s;overflow:auto;
+}
+
+.cart-item{
+  font-size:13px;
+  margin-bottom:10px;
+  border-bottom:1px solid #eee;
+  padding-bottom:8px;
+}
+
+.cart-summary{font-size:14px;margin-top:10px;}
+
+button.checkout{
+  width:100%;
+  margin-top:10px;
+  padding:10px;
+  background:green;
+  color:white;
+  border:none;
+  border-radius:10px;
+}
+</style>
 </head>
+
 <body>
-<h1>HAMU FUNCIONA</h1>
+
+<div class="header">
+  <strong>HAMU</strong>
+  <input class="search" placeholder="Buscar...">
+  <div onclick="openCart()" style="cursor:pointer;">🛒</div>
+</div>
+
+<div class="cats">
+  <div class="cat active" onclick="filter('todos',event)">Todo</div>
+  <div class="cat" onclick="filter('ropa',event)">Ropa</div>
+  <div class="cat" onclick="filter('comida',event)">Comida</div>
+  <div class="cat" onclick="filter('accesorios',event)">Accesorios</div>
+  <div class="cat" onclick="filter('hogar',event)">Hogar</div>
+</div>
+
+<div class="content" id="grid"></div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">✖</span>
+
+    <h3 id="mTitle"></h3>
+    <img id="mImg" style="width:100%;border-radius:10px">
+    <p id="mDesc"></p>
+    <p id="mPrice"></p>
+
+    <button onclick="addModal()">Agregar al carrito</button>
+  </div>
+</div>
+
+<!-- CART -->
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+
+<div class="cart-panel" id="cartPanel">
+  <h3>🛒 Carrito</h3>
+
+  <div style="margin-bottom:10px;">
+    <input id="cp" placeholder="Código postal"
+      style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
+  </div>
+
+  <div id="cartItems"></div>
+  <div class="cart-summary" id="cartSummary"></div>
+
+  <button class="checkout" onclick="checkout()">Finalizar compra</button>
+</div>
+
+<script>
+
+let products = [
+  {id:1,name:"Vestido floral",price:199,cat:"ropa",img:"https://via.placeholder.com/300",desc:"Vestido ligero"},
+  {id:2,name:"Brownies",price:80,cat:"comida",img:"https://via.placeholder.com/300",desc:"Caseros"},
+  {id:3,name:"Collar dorado",price:120,cat:"accesorios",img:"https://via.placeholder.com/300",desc:"Elegante"},
+  {id:4,name:"Velas aromáticas",price:150,cat:"hogar",img:"https://via.placeholder.com/300",desc:"Relax total"},
+];
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let current = null;
+
+/* PRODUCTOS */
+function render(list=products){
+  let grid=document.getElementById("grid");
+  grid.innerHTML="";
+
+  list.forEach(p=>{
+    grid.innerHTML+=`
+    <div class="card">
+      <img src="${p.img}" onclick="openProduct(${p.id})">
+      <div class="info">
+        <div>${p.name}</div>
+        <div class="price">$${p.price}</div>
+        <button class="btn" onclick="add(${p.id})">Agregar</button>
+      </div>
+    </div>`;
+  });
+}
+render();
+
+/* FILTRO */
+function filter(cat,e){
+  document.querySelectorAll(".cat").forEach(c=>c.classList.remove("active"));
+  e.target.classList.add("active");
+
+  if(cat==="todos") render();
+  else render(products.filter(p=>p.cat===cat));
+}
+
+/* AGREGAR */
+function add(id){
+  let p = products.find(x=>x.id===id);
+  let existing = cart.find(x=>x.id===id);
+
+  if(existing){
+    existing.qty += 1;
+  } else {
+    cart.push({...p, qty:1});
+  }
+
+  save();
+}
+
+/* MODAL */
+function openProduct(id){
+  current = products.find(p=>p.id===id);
+
+  document.getElementById("mTitle").innerText=current.name;
+  document.getElementById("mImg").src=current.img;
+  document.getElementById("mDesc").innerText=current.desc;
+  document.getElementById("mPrice").innerText="$"+current.price;
+
+  document.getElementById("modal").style.display="flex";
+}
+
+function closeModal(){
+  document.getElementById("modal").style.display="none";
+}
+
+function addModal(){
+  let existing = cart.find(x=>x.id===current.id);
+
+  if(existing){
+    existing.qty += 1;
+  } else {
+    cart.push({...current, qty:1});
+  }
+
+  save();
+  closeModal();
+}
+
+/* GUARDAR */
+function save(){
+  localStorage.setItem("cart",JSON.stringify(cart));
+  renderCart();
+}
+
+/* CARRITO */
+function openCart(){
+  document.getElementById("cartOverlay").style.display="block";
+  document.getElementById("cartPanel").style.right="0";
+  renderCart();
+}
+
+function closeCart(){
+  document.getElementById("cartOverlay").style.display="none";
+  document.getElementById("cartPanel").style.right="-100%";
+}
+
+/* ENVÍO */
+function calcularEnvio(cp){
+  cp = (cp || "").trim();
+
+  if(cp.startsWith("30450")) return { costo:35, tipo:"Arriaga" };
+  if(cp.startsWith("29") || cp.startsWith("30")) return { costo:60, tipo:"Chiapas" };
+  if(cp.startsWith("0") || cp.startsWith("7") || cp.startsWith("9")) return { costo:120, tipo:"Zona media" };
+
+  return { costo:150, tipo:"Lejano" };
+}
+
+/* CARRITO */
+function renderCart(){
+
+  let box=document.getElementById("cartItems");
+  box.innerHTML="";
+
+  let subtotal=0;
+
+  cart.forEach((p,i)=>{
+    p.qty = p.qty || 1;
+
+    subtotal += p.price * p.qty;
+
+    box.innerHTML+=`
+      <div class="cart-item">
+        <div>${p.name}</div>
+        <div>$${p.price}</div>
+
+        <div>
+          <button onclick="dec(${i})">-</button>
+          <span>${p.qty}</span>
+          <button onclick="inc(${i})">+</button>
+          <button onclick="removeItem(${i})">x</button>
+        </div>
+      </div>
+    `;
+  });
+
+  let cpValue = document.getElementById("cp")?.value || "";
+  let envio = calcularEnvio(cpValue);
+
+  let iva = subtotal * 0.16;
+  let total = subtotal + iva + envio.costo;
+
+  document.getElementById("cartSummary").innerHTML=`
+  <hr>
+  Subtotal: $${subtotal}<br>
+  IVA: $${iva.toFixed(2)}<br>
+
+  🚚 Envío (${envio.tipo}): $${envio.costo}<br>
+  <small>Se confirma después</small>
+
+  <br><b>Total: $${total.toFixed(2)}</b>
+  `;
+}
+
+/* CONTROLES */
+function inc(i){ cart[i].qty++; save(); }
+function dec(i){ cart[i].qty--; if(cart[i].qty<=0) cart.splice(i,1); save(); }
+function removeItem(i){ cart.splice(i,1); save(); }
+
+/* CHECKOUT */
+function checkout(){
+
+  if(cart.length===0) return alert("Carrito vacío");
+
+  let cp=document.getElementById("cp")?.value;
+  let envio=calcularEnvio(cp);
+
+  let subtotal=cart.reduce((a,b)=>a+b.price*b.qty,0);
+  let iva=subtotal*0.16;
+  let total=subtotal+iva+envio.costo;
+
+  let msg="🛒 NUEVO PEDIDO%0A%0A";
+
+  cart.forEach(p=>{
+    msg+=`• ${p.name} x${p.qty} - $${p.price*p.qty}%0A`;
+  });
+
+  msg+=`%0A🚚 Envío: ${envio.tipo} ($${envio.costo})`;
+  msg+=`%0A💰 TOTAL: $${total}`;
+
+  localStorage.removeItem("cart");
+  cart=[];
+  renderCart();
+  closeCart();
+
+  window.open(
+    `https://wa.me/529661117847?text=${encodeURIComponent(msg)}`,
+    "_blank"
+  );
+}
+
+/* LOAD */
+window.addEventListener("load", () => {
+  const cp = document.getElementById("cp");
+  if(cp){
+    cp.addEventListener("input", renderCart);
+  }
+  renderCart();
+});
+
+</script>
 </body>
 </html>
