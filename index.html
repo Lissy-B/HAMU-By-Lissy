@@ -133,15 +133,19 @@ button.checkout{
   <button class="checkout" onclick="checkout()">Finalizar compra</button>
 </div>
 
-<!-- 🔌 CONEXIÓN A PRODUCTOS -->
-<script src="products.js"></script>
-
 <script>
+
+let products = [
+  {id:1,name:"Vestido floral",price:199,cat:"ropa",img:"https://via.placeholder.com/300",desc:"Vestido ligero"},
+  {id:2,name:"Brownies",price:80,cat:"comida",img:"https://via.placeholder.com/300",desc:"Caseros"},
+  {id:3,name:"Collar dorado",price:120,cat:"accesorios",img:"https://via.placeholder.com/300",desc:"Elegante"},
+  {id:4,name:"Velas aromáticas",price:150,cat:"hogar",img:"https://via.placeholder.com/300",desc:"Relax total"},
+];
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let current = null;
 
-/* RENDER PRODUCTOS */
+/* PRODUCTOS */
 function render(list=products){
   let grid=document.getElementById("grid");
   grid.innerHTML="";
@@ -241,7 +245,7 @@ function calcularEnvio(cp){
   return { costo:150, tipo:"Lejano" };
 }
 
-/* RENDER CARRITO */
+/* CARRITO */
 function renderCart(){
 
   let box=document.getElementById("cartItems");
@@ -276,52 +280,4 @@ function renderCart(){
   let total = subtotal + iva + envio.costo;
 
   document.getElementById("cartSummary").innerHTML=`
-  <hr>
-  Subtotal: $${subtotal}<br>
-  IVA: $${iva.toFixed(2)}<br>
-
-  🚚 Envío (${envio.tipo}): $${envio.costo}<br>
-  <small>Se confirma después</small>
-
-  <br><b>Total: $${total.toFixed(2)}</b>
-  `;
-}
-
-/* CONTROLES */
-function inc(i){ cart[i].qty++; save(); }
-function dec(i){ cart[i].qty--; if(cart[i].qty<=0) cart.splice(i,1); save(); }
-function removeItem(i){ cart.splice(i,1); save(); }
-
-/* CHECKOUT */
-function checkout(){
-
-  if(cart.length===0) return alert("Carrito vacío");
-
-  let cp=document.getElementById("cp")?.value;
-  let envio=calcularEnvio(cp);
-
-  let subtotal=cart.reduce((a,b)=>a+b.price*b.qty,0);
-  let iva=subtotal*0.16;
-  let total=subtotal+iva+envio.costo;
-
-  let msg="🛒 NUEVO PEDIDO%0A%0A";
-
-  cart.forEach(p=>{
-    msg+=`• ${p.name} x${p.qty} - $${p.price*p.qty}%0A`;
-  });
-
-  msg+=`%0A🚚 Envío: ${envio.tipo} ($${envio.costo})`;
-  msg+=`%0A💰 TOTAL: $${total}`;
-
-  localStorage.removeItem("cart");
-  cart=[];
-  renderCart();
-  closeCart();
-
-  window.open(`https://wa.me/529661117847?text=${msg}`,"_blank");
-}
-
-</script>
-
-</body>
-</html>
+  <
